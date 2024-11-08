@@ -126,6 +126,15 @@ static void event_loop(RPiCamEncoder &app)
 
 int main(int argc, char *argv[])
 {
+	remove("/tmp/rpicam_vid.pid");
+	pid_t pid = getpid();
+	FILE* filePID = fopen("/tmp/rpicam_vid.pid", "wb");
+	if ( filePID != NULL )
+	{
+		fprintf(filePID, "%d", pid);
+		fclose(filePID);
+	}
+
 	try
 	{
 		RPiCamEncoder app;
