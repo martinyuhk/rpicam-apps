@@ -85,6 +85,7 @@ static void event_loop(RPiCamEncoder &app)
 	signal(SIGPIPE, default_signal_handler);
 	pollfd p[1] = { { STDIN_FILENO, POLLIN, 0 } };
 
+	bool myenable = false;
 	for (unsigned int count = 0; ; count++)
 	{
 		RPiCamEncoder::Msg msg = app.Wait();
@@ -100,8 +101,12 @@ static void event_loop(RPiCamEncoder &app)
 		else if (msg.type != RPiCamEncoder::MsgType::RequestComplete)
 			throw std::runtime_error("unrecognised message!");
 		int key = get_key_or_signal(options, p);
+		
 		if (key == '\n')
+		{
 			output->Signal();
+			myenable = !myenable;
+		}
 
 		LOG(2, "Viewfinder frame " << count);
 		auto now = std::chrono::high_resolution_clock::now();
@@ -118,9 +123,13 @@ static void event_loop(RPiCamEncoder &app)
 			return;
 		}
 
-		CompletedRequestPtr &completed_request = std::get<CompletedRequestPtr>(msg.payload);
-		app.EncodeBuffer(completed_request, app.VideoStream());
-		app.ShowPreview(completed_request, app.VideoStream());
+		LOG(2, "Viewfinder frame myenable: " << myenable);
+		if ( myenable == true )
+		{
+			CompletedRequestPtr &completed_request = std::get<CompletedRequestPtr>(msg.payload);
+			app.EncodeBuffer(completed_request, app.VideoStream());
+			app.ShowPreview(completed_request, app.VideoStream());
+		}
 	}
 }
 
